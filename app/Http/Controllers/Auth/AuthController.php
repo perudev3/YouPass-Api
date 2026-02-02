@@ -80,7 +80,9 @@ class AuthController extends Controller
         );
 
         // Generar token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $tokenResult = $user->createToken('auth_token');
+        $token = $tokenResult->accessToken;
+
 
         // ¿Debe completar perfil?
         $needsProfile = is_null($user->name);
@@ -92,5 +94,52 @@ class AuthController extends Controller
             'user' => $user,
         ]);
     }
+
+    public function registerProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'No autenticado'
+            ], 401);
+        }
+
+        if (!is_null($user->name)) {
+            return response()->json([
+                'message' => 'El perfil ya fue completado'
+            ], 400);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string',
+            'instagram' => 'nullable|string|max:255',
+        ]);
+
+        $user->update($request->only([
+            'name',
+            'email',
+            'birth_date',
+            'gender',
+            'instagram',
+        ]));
+
+        return response()->json([
+            'message' => 'Perfil completado correctamente',
+            'user' => $user
+        ]);
+    }
+
+
+    public function MeProfile(Request $request) {
+        return response()->json([
+            'user' => $request->user()
+        ]);
+    }
+
+
 
 }

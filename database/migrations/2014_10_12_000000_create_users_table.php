@@ -21,7 +21,7 @@ class CreateUsersTable extends Migration
             $table->string('email')->nullable()->unique();
 
             $table->date('birth_date')->nullable();
-            $table->enum('gender', ['male', 'female'])->nullable();
+            $table->enum('gender', ['Hombre', 'Mujer'])->nullable();
             $table->string('instagram')->nullable();
 
             $table->boolean('is_verified')->default(false);

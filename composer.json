@@ -13,6 +13,7 @@
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^6.3",
         "laravel/framework": "^7.0",
+        "laravel/passport": "~9.0",
         "laravel/sanctum": "^2.15",
         "laravel/tinker": "^2.0"
     },
@@ -26,7 +27,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "audit": {
+            "block-insecure": false
+        }
     },
     "extra": {
         "laravel": {
