@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\TicketController;
-use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventsController;
 
 Route::prefix('auth')->group(function () {
 
@@ -17,9 +17,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware(['auth:api', 'throttle:10,1'])->group(function () {
 
         Route::post('/register-profile', [AuthController::class, 'registerProfile']);
-        Route::get('/me', [AuthController::class, 'MeProfile']);
-
-        Route::get('/events/{event}', [EventController::class, 'show']);
+        Route::get('/me', [AuthController::class, 'MeProfile']);        
 
         Route::post('/purchases', [TicketController::class, 'buy'])
             ->withoutMiddleware('throttle:10,1');
@@ -28,6 +26,10 @@ Route::prefix('auth')->group(function () {
             ->withoutMiddleware('throttle:10,1');;
 
         Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
+
+        Route::get('/events', [EventsController::class, 'index']);
+
+        Route::get('/events/{event}', [EventsController::class, 'show']);
 
     });
 });
