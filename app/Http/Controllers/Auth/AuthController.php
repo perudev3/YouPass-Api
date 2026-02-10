@@ -11,6 +11,49 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+
+    private function sendWhatsApp($phone, $message)
+    {
+        $token = env('FACTILIZA_TOKEN');
+        $instance = env('FACTILIZA_INSTANCE');
+
+        $url = "https://apiwsp.factiliza.com/v1/message/sendtext/{$instance}";
+
+        $data = [
+            'number' => $phone,
+            'text' => $message
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer {$token}",
+                "Content-Type: application/json"
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err) {
+            Log::error("Error enviando WhatsApp a {$phone}: {$err}");
+            return false;
+        }
+
+        Log::info("WhatsApp enviado a {$phone}: {$response}");
+        return true;
+    }
+
     public function sendOtp(Request $request)
     {
         $request->validate([
@@ -35,8 +78,10 @@ class AuthController extends Controller
             'used' => false,
         ]);
 
-        // Simular SMS (LOG)
-        Log::info("OTP enviado al número {$phone}: {$code}");
+        // Enviar por WhatsApp
+        $message = "Tu código de verificación es: {$code}";
+        $this->sendWhatsApp($phone, $message);
+
 
         return response()->json([
             'message' => 'Código enviado correctamente'
