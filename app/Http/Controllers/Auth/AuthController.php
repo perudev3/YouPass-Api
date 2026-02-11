@@ -14,8 +14,8 @@ class AuthController extends Controller
 
     private function sendWhatsApp($phone, $message)
     {
-        $token = env('FACTILIZA_TOKEN');
-        $instance = env('FACTILIZA_INSTANCE');
+        $token = config('services.factiliza.token');
+        $instance = config('services.factiliza.instance');
 
         $url = "https://apiwsp.factiliza.com/v1/message/sendtext/{$instance}";
 
