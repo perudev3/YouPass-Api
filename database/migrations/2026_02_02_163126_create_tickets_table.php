@@ -18,9 +18,9 @@ class CreateTicketsTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->foreignId('ticket_type_id')->constrained()->onDelete('cascade');
-
-            $table->string('code')->unique(); // código único
             $table->string('qr_path')->nullable();
+
+            $table->string('seat_id')->nullable(); // saber que mesa fue comprada
 
             $table->enum('status', ['valid', 'used', 'cancelled'])->default('valid');
             $table->timestamp('used_at')->nullable();

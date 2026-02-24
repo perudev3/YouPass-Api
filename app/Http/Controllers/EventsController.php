@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Event;
+use App\Ticket;
 
 class EventsController extends Controller
 {
@@ -22,7 +23,17 @@ class EventsController extends Controller
             ], 404);
         }
 
-        return response()->json($event);
+        // 🔥 Asientos ya comprados para este evento
+        $soldSeats = Ticket::where('event_id', $id)
+            ->whereNotNull('seat_id')
+            ->whereIn('status', ['valid', 'used'])  // 🔥 'valid' en vez de 'active'
+            ->pluck('seat_id')
+            ->toArray();
+
+        $data = $event->toArray();
+        $data['sold_seats'] = $soldSeats;
+
+        return response()->json($data);
     }
 
 }

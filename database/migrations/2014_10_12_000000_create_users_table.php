@@ -26,6 +26,8 @@ class CreateUsersTable extends Migration
 
             $table->boolean('is_verified')->default(false);
 
+            $table->boolean('mood_partty')->default(false);
+
             $table->timestamp('phone_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\OtpCode;
 use App\User;
+use App\Ticket;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -186,5 +187,30 @@ class AuthController extends Controller
     }
 
 
+    public function MoodPartty(Request $request) {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'No autenticado'
+            ], 401);
+        }
+
+        $tiene_entradas = Ticket::where('user_id', $user->id)->exists();
+
+        if ($tiene_entradas) {
+            $user->update($request->only(['mood_partty']));
+
+            return response()->json([
+                'message' => 'Modo Fiesta Activado',
+                'status' => 'success'
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'Compra entradas de algún evento para activar Modo Fiesta',
+                'status' => 'error'
+            ], 403);
+        }
+    }
 
 }

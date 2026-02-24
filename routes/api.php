@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\EventsController;
+use App\Http\Controllers\InvitationController;
 
 Route::prefix('auth')->group(function () {
 
@@ -12,6 +13,9 @@ Route::prefix('auth')->group(function () {
         ->withoutMiddleware('throttle:api');
 
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
+        ->withoutMiddleware('throttle:api');
+
+    Route::post('/invite/{token}', [EventsController::class, 'claim'])
         ->withoutMiddleware('throttle:api');
 
     Route::middleware(['auth:api', 'throttle:10,1'])->group(function () {
@@ -23,13 +27,23 @@ Route::prefix('auth')->group(function () {
             ->withoutMiddleware('throttle:10,1');
 
         Route::get('/my-tickets', [TicketController::class, 'myTickets'])
-            ->withoutMiddleware('throttle:10,1');;
+            ->withoutMiddleware('throttle:10,1');        
 
         Route::post('/tickets/validate', [TicketController::class, 'validateTicket']);
 
         Route::get('/events', [EventsController::class, 'index']);
 
         Route::get('/events/{event}', [EventsController::class, 'show']);
+
+        Route::post('/mood_partty/status', [AuthController::class, 'MoodPartty']);
+
+        Route::get('/tickets/{ticketId}/invitations', [InvitationController::class, 'index']);
+        Route::post('/invitations/{id}/assign', [InvitationController::class, 'assign']);
+        Route::get('/my-invitations', [InvitationController::class, 'myInvitations'])
+            ->withoutMiddleware('throttle:10,1');
+
+        Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond'])
+            ->withoutMiddleware('throttle:10,1');
 
     });
 });

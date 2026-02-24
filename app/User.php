@@ -24,6 +24,7 @@ class User extends Authenticatable
         'gender',
         'instagram',
         'is_verified',
+        'mood_partty'
     ];
 
     protected $hidden = [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Ticket;
 use App\TicketType;
 use App\Order;
+use App\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,7 +18,8 @@ class TicketController extends Controller
     {
         $request->validate([
             'event_id' => 'required|exists:events,id',
-            'items' => 'required|array|min:1'
+            'items' => 'required|array|min:1',
+            'seats'    => 'nullable|array' 
         ]);
 
         // 🔐 PASSPORT USER
@@ -52,6 +54,8 @@ class TicketController extends Controller
             ]);
 
             $tickets = [];
+            $seatIndex = 0;
+            $seats     = $request->input('seats', []);
 
             /* =========================
                CREAR TICKETS
@@ -69,11 +73,22 @@ class TicketController extends Controller
                         'event_id' => $request->event_id,
                         'ticket_type_id' => $ticketType->id,
                         'order_id' => $order->id,
-                        'code' => $code,
-                        'status' => 'valid'
+                        'status' => 'valid',
+                        'seat_id'        => $seats[$seatIndex] ?? null,
                     ]);
 
+                    if (str_contains(strtolower($ticketType->name), 'vip')) {
+                        for ($j = 0; $j < 10; $j++) {
+                            Invitation::create([
+                                'ticket_id' => $ticket->id,
+                                'event_id'  => $request->event_id,
+                                'code'      => 'INV-' . strtoupper(Str::random(8)),
+                                'status'    => 'pending'
+                            ]);
+                        }
+                    }
 
+                    $seatIndex++;
                     $tickets[] = $ticket;
                 }
 
