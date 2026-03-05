@@ -6,9 +6,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;   // 🔥
 use App\Invitation;
 use App\Ticket;   
+use Illuminate\Support\Facades\Log;
 
 class InvitationController extends Controller
 {
+    private function sendWhatsApp($phone, $message)
+    {
+        $token = config('services.factiliza.token');
+        $instance = config('services.factiliza.instance');
+
+        $url = "https://apiwsp.factiliza.com/v1/message/sendtext/{$instance}";
+
+        $data = [
+            'number' => $phone,
+            'text' => $message
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => [
+                "Authorization: Bearer {$token}",
+                "Content-Type: application/json"
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err) {
+            Log::error("Error enviando WhatsApp a {$phone}: {$err}");
+            return false;
+        }
+
+        Log::info("WhatsApp enviado a {$phone}: {$response}");
+        return true;
+    }
+    
     // Ver los 10 códigos de una mesa
     public function index($ticketId)
     {
@@ -77,15 +120,28 @@ class InvitationController extends Controller
             'status'      => 'sent'
         ]);
 
-        // 🔥 Link que se enviará al invitado
-        $link = config('app.frontend_url') . "/invite/{$token}";
+        $event    = $invitation->event;
+        $hostName = auth()->user()->name;
+        $seatId   = $ticket->seat_id;
+        $code     = $invitation->code;
 
-        // 🔥 Enviar por WhatsApp (usando Twilio, ultramsg, etc)
-        // O simplemente retornar el link para que el frontend lo comparta
+        $message = "🎉 *¡Tienes una invitación!*\n\n"
+            . "*{$hostName}* te invita al evento:\n\n"
+            . "📅 *{$event->name}*\n"
+            . "🗓 {$event->date}\n"
+            . "📍 {$event->location}\n"
+            . "🪑 Mesa: *{$seatId}*\n\n"
+            . "Tu código de acceso:\n"
+            . "🔑 *{$code}*\n\n"
+            . "👉 Descarga la app, ingresa con tu número y ve a *Mis Invitaciones* para aceptar y ver tu QR de entrada.\n\n"
+            . "¡Te esperamos! 🥳";
+
+        $sent = $this->sendWhatsApp($request->phone, $message);
+
         return response()->json([
             'success' => true,
-            'link'    => $link,
-            'phone'   => $request->phone
+            'phone'   => $request->phone,
+            'whatsapp' => true,
         ]);
     }
 

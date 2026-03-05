@@ -213,4 +213,36 @@ class AuthController extends Controller
         }
     }
 
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'No autenticado'
+            ], 401);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string',
+            'instagram' => 'nullable|string|max:255',
+        ]);
+
+        $user->update($request->only([
+            'name',
+            'email',
+            'birth_date',
+            'gender',
+            'instagram',
+        ]));
+
+        return response()->json([
+            'message' => 'Perfil actualizado correctamente',
+            'user' => $user
+        ]);
+    }
+
 }

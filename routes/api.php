@@ -6,6 +6,13 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\EventsController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\BarOrderController;
+use App\Http\Controllers\CardController;
+
+Route::middleware('auth:api')->get(
+    '/auth/event-bar/{event}/{category}',
+    'EventBarController@items'
+);
 
 Route::prefix('auth')->group(function () {
 
@@ -22,6 +29,7 @@ Route::prefix('auth')->group(function () {
 
         Route::post('/register-profile', [AuthController::class, 'registerProfile']);
         Route::get('/me', [AuthController::class, 'MeProfile']);        
+        Route::post('/profile', [AuthController::class, 'updateProfile']);
 
         Route::post('/purchases', [TicketController::class, 'buy'])
             ->withoutMiddleware('throttle:10,1');
@@ -44,6 +52,12 @@ Route::prefix('auth')->group(function () {
 
         Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond'])
             ->withoutMiddleware('throttle:10,1');
+
+        Route::post('/bar/buy',[BarOrderController::class,'buy']);
+
+        Route::get('/cards', [CardController::class, 'index']);
+        Route::post('/cards', [CardController::class, 'store']);
+        Route::delete('/cards/{id}', [CardController::class, 'destroy']);
 
     });
 });

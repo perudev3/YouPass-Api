@@ -126,6 +126,7 @@ class TicketController extends Controller
                         : null,
 
                     'event' => [
+                        'id' => $ticket->event->id,
                         'name' => $ticket->event->name,
                         'date' => $ticket->event->date,
                         'location' => $ticket->event->location,
