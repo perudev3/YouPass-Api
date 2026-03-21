@@ -9,9 +9,12 @@ class CardController extends Controller
 {
     public function index(Request $request)
     {
-        return $request->user()->cards;
+        return response()->json([
+            'cards' => $request->user()->cards()->latest()->get()
+        ]);
     }
 
+    
     public function store(Request $request)
     {
 
