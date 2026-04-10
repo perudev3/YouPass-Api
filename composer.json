@@ -16,7 +16,8 @@
         "laravel/passport": "~9.0",
         "laravel/sanctum": "^2.15",
         "laravel/tinker": "^2.0",
-        "simplesoftwareio/simple-qrcode": "^4.2"
+        "simplesoftwareio/simple-qrcode": "^4.2",
+        "transbank/transbank-sdk": "^4.0"
     },
     "require-dev": {
         "facade/ignition": "^2.0",

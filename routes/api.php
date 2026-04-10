@@ -14,6 +14,9 @@ Route::middleware('auth:api')->get(
     'EventBarController@items'
 );
 
+Route::post('/flow/confirm', [TicketController::class, 'flowConfirm']);
+Route::get('/flow/return',   [TicketController::class, 'flowReturn']);
+
 Route::prefix('auth')->group(function () {
 
     Route::post('/send-otp', [AuthController::class, 'sendOtp'])
@@ -30,6 +33,8 @@ Route::prefix('auth')->group(function () {
         Route::post('/register-profile', [AuthController::class, 'registerProfile']);
         Route::get('/me', [AuthController::class, 'MeProfile']);        
         Route::post('/profile', [AuthController::class, 'updateProfile']);
+
+        Route::post('/create-transaction', [TicketController::class, 'createTransaction'])->withoutMiddleware('throttle:10,1');
 
         Route::post('/purchases', [TicketController::class, 'buy'])
             ->withoutMiddleware('throttle:10,1');

@@ -10,9 +10,125 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Transbank\Webpay\WebpayPlus\Transaction;
 
 class TicketController extends Controller
 {
+
+    public function createTransaction(Request $request)
+    {
+        $request->validate([
+            'event_id' => 'required',
+            'items'    => 'required|array',
+            'seats'    => 'nullable|array',
+            'total'    => 'required|numeric',
+        ]);
+
+        $user = auth()->user();
+
+        // Calcular monto real desde la BD (nunca confíes en el total del cliente)
+        $amount = 0;
+        foreach ($request->items as $ticketTypeId => $qty) {
+            $ticketType = \App\TicketType::findOrFail($ticketTypeId);
+            $amount += $ticketType->price * $qty;
+        }
+
+        $commerceOrder = 'ORD-' . time() . '-' . $user->id;
+
+        // Guardar orden pendiente
+        $order = \App\Order::create([
+            'user_id'           => $user->id,
+            'event_id'          => $request->event_id,
+            'total'             => $amount,
+            'status'            => 'pending',
+            'payment_method'    => 'flow',
+            'payment_reference' => $commerceOrder,
+            'meta'              => json_encode([
+                'items' => $request->items,
+                'seats' => $request->seats ?? [],
+            ]),
+        ]);
+
+        $flow = new \App\Services\FlowService();
+
+        $result = $flow->post('payment/create', [
+            'commerceOrder'   => $commerceOrder,
+            'subject'         => 'Entradas - Evento #' . $request->event_id,
+            'amount'          => (int) $amount,
+            'email'           => $user->email,
+            'urlConfirmation' => url('/api/flow/confirm'),
+            'urlReturn'       => url('/api/flow/return'),
+        ]);
+
+        if (!isset($result['token'])) {
+            return response()->json([
+                'message' => 'Error al crear pago en Flow',
+                'detail'  => $result,
+            ], 500);
+        }
+
+        return response()->json([
+            'url'   => $result['url'],
+            'token' => $result['token'],
+        ]);
+    }
+
+    public function flowConfirm(Request $request)
+    {
+        $token = $request->input('token');
+
+        if (!$token) {
+            return response()->json(['error' => 'Token no recibido'], 400);
+        }
+
+        $flow   = new \App\Services\FlowService();
+        $status = $flow->get('payment/getStatus', ['token' => $token]);
+
+        // status 2 = pagado
+        if (($status['status'] ?? null) == 2) {
+            $order = \App\Order::where('payment_reference', $status['commerceOrder'])->first();
+
+            if (!$order || $order->status === 'paid') {
+                return response()->json(['ok' => true]); // idempotente
+            }
+
+            $order->update(['status' => 'paid']);
+
+            $data = json_decode($order->meta, true);
+
+            auth()->setUser(\App\User::find($order->user_id));
+
+            $newRequest = new \Illuminate\Http\Request();
+            $newRequest->replace([
+                'event_id' => $order->event_id,
+                'items'    => (array) $data['items'],
+                'seats'    => (array) ($data['seats'] ?? []),
+            ]);
+
+            $this->buy($newRequest);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function flowReturn(Request $request)
+    {
+        $token = $request->input('token');
+
+        $flow   = new \App\Services\FlowService();
+        $status = $flow->get('payment/getStatus', ['token' => $token]);
+
+        $paid = ($status['status'] ?? null) == 2;
+
+        // Redirigir a la app Vue con el resultado
+        $frontendUrl = config('app.frontend_url', 'http://localhost:9000');
+
+        if ($paid) {
+            return redirect("{$frontendUrl}/payment-success");
+        }
+
+        return redirect("{$frontendUrl}/payment-failed");
+    }
 
     public function buy(Request $request)
     {
@@ -110,7 +226,7 @@ class TicketController extends Controller
         $user = auth()->user(); // 🔐 Passport
 
         $tickets = Ticket::with([
-                'event:id,name,date,location,image',
+                'event',
                 'ticketType:id,name'
             ])
             ->where('user_id', $user->id)

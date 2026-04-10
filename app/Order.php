@@ -8,10 +8,12 @@ class Order extends Model
 {
     protected $fillable = [
         'user_id',
+        'event_id',
         'total',
         'status',
         'payment_method',
-        'payment_reference'
+        'payment_reference',
+        'meta',
     ];
 
     public function tickets()
