@@ -180,12 +180,66 @@ class AuthController extends Controller
     }
 
 
-    public function MeProfile(Request $request) {
+    public function MeProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $roles = $user->eventRoles()->get();
+        $firstRole = $roles->first();
+        $primaryRole = $firstRole ? $firstRole->role : null;
+
+        // 👇 solo eventos para scanners
+        $scannerEvents = [];
+
+        if (in_array($primaryRole, ['scanner_puerta', 'scanner_barra'])) {
+            $scannerEvents = \App\EventUserRole::with('event')
+                ->where('user_id', $user->id)
+                ->whereIn('role', ['scanner_puerta', 'scanner_barra'])
+                ->get()
+                ->pluck('event')
+                ->unique('id')
+                ->values();
+        }
+
         return response()->json([
-            'user' => $request->user()
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'birth_date' => $user->birth_date,
+                'gender' => $user->gender,
+                'instagram' => $user->instagram,
+                'is_verified' => $user->is_verified,
+                'mood_partty' => $user->mood_partty,
+
+                // 🔥 rol principal seguro
+                'role' => $primaryRole ?? 'cliente'
+            ],
+
+            // 🔥 SOLO para scanners
+            'events' => $scannerEvents
         ]);
     }
 
+    public function myScannerEvents(Request $request)
+    {
+        $user = $request->user();
+
+        // Solo scanners
+        if (!in_array($user->role, ['scanner_puerta', 'scanner_barra'])) {
+            return response()->json([]);
+        }
+
+        $events = EventUserRole::with('event')
+            ->where('user_id', $user->id)
+            ->get()
+            ->pluck('event')
+            ->unique('id')
+            ->values();
+
+        return response()->json($events);
+    }
 
     public function MoodPartty(Request $request) {
         $user = $request->user();
@@ -242,6 +296,18 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Perfil actualizado correctamente',
             'user' => $user
+        ]);
+    }
+
+
+    public function myRole(Request $request)
+    {
+         $user = $request->user();
+
+        $role = \App\EventUserRole::where('user_id', $user->id)->first();
+        
+        return response()->json([
+            'role' => $role ? $role->role : 'cliente'
         ]);
     }
 

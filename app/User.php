@@ -44,4 +44,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Card::class);
     }
+
+    public function eventRoles()
+    {
+        return $this->hasMany(EventUserRole::class);
+    }
 }

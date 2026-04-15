@@ -24,4 +24,9 @@ class Event extends Model
     {
         return $this->hasMany(Ticket::class);
     }
+
+    public function userRoles()
+    {
+        return $this->hasMany(EventUserRole::class);
+    }
 }

@@ -28,7 +28,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/invite/{token}', [EventsController::class, 'claim'])
         ->withoutMiddleware('throttle:api');
 
-    Route::middleware(['auth:api', 'throttle:10,1'])->group(function () {
+    Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
 
         Route::post('/register-profile', [AuthController::class, 'registerProfile']);
         Route::get('/me', [AuthController::class, 'MeProfile']);        
@@ -60,9 +60,13 @@ Route::prefix('auth')->group(function () {
 
         Route::post('/bar/buy',[BarOrderController::class,'buy']);
 
+        Route::get('/bar-orders/my', [BarOrderController::class, 'myOrders']);
+
         Route::get('/cards', [CardController::class, 'index']);
         Route::post('/cards', [CardController::class, 'store']);
         Route::delete('/cards/{id}', [CardController::class, 'destroy']);
+
+        Route::get('/my-role', [AuthController::class, 'myRole']);
 
     });
 });
